@@ -1,8 +1,10 @@
-emp_details = LOAD '/home/acadgild/pig_input_assignment5/employee_details.txt' USING PigStorage (',') as (empid:Int,empname:chararray,salary:Int,rating
-:Int);
-emp_expenses = LOAD '/home/acadgild/pig_input_assignment5/employee_expenses.txt' using PigStorage as(empid:int,expenses:int);
-emp_join = JOIN emp_details by empid,emp_expenses by empid;
-emp_order = ORDER emp_join by emp_expenses::expenses DESC,emp_details::empname;
-emp_top_expenses = LIMIT emp_order 1;
-result = FOREACH emp_top_expenses GENERATE emp_details::empid as empid,emp_details::empname as empname,emp_expenses::expenses as expenses;
-dump result;
+emp_details= LOAD '/home/acadgild/pig_input_assignment5/employee_details.txt' USING PigStorage(',') AS(empId:int,empName:chararray,Salary:int,rating:int);
+emp_expenses= LOAD '/home/acadgild/pig_input_assignment5/employee_expenses.txt' USING PigStorage('\t') AS(empId:int,empexpenses:int);
+join_empdetails_expenses= JOIN emp_details BY empId, emp_expenses BY empId;
+joined_empdata = FOREACH join_empdetails_expenses GENERATE emp_details::empId, emp_details::empName, emp_expenses::empexpenses;
+joined_empdata_group = GROUP joined_empdata by (empId,empName);
+joined_empdata_sum = FOREACH joined_empdata_group GENERATE group, SUM(joined_empdata.emp_expenses::empexpenses) as sum;
+joined_data_order = ORDER joined_empdata_sum by sum DESC;
+joined_data_limit = LIMIT joined_data_order 1;
+result = FOREACH joined_data_limit GENERATE FLATTEN(group);
+DUMP result;
